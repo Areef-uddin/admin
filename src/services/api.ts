@@ -20,6 +20,15 @@ const API_BASE = `${RAW_BASE}/api/v1`;
 let isRefreshingAuth = false;
 let authRefreshPromise: Promise<string | null> | null = null;
 
+async function safeJson(res: Response): Promise<any> {
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text || res.statusText || `HTTP ${res.status}` };
+  }
+}
+
 async function refreshAdminToken(): Promise<string | null> {
   if (isRefreshingAuth && authRefreshPromise) {
     return authRefreshPromise;
@@ -32,7 +41,7 @@ async function refreshAdminToken(): Promise<string | null> {
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({ email: 'admin@zivbiyt.com', password: 'password123' }),
       });
-      const data = await res.json();
+      const data = await safeJson(res);
       if (res.ok && data.token) {
         localStorage.setItem('token', data.token);
         return data.token as string;
@@ -79,9 +88,9 @@ export const api = {
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-    const data = await res.json();
+    const data = await safeJson(res);
     if (!res.ok) {
-      throw new Error(data.message || 'Login failed');
+      throw new Error(data.message || data.error || `Login failed (${res.status})`);
     }
     localStorage.setItem('token', data.token);
     return data;
@@ -89,7 +98,7 @@ export const api = {
 
   async me(): Promise<{ user: User }> {
     const res = await fetchWithAuth(`${API_BASE}/auth/me`);
-    const json = await res.json();
+    const json = await safeJson(res);
     if (!res.ok || !json.user) {
       throw new Error(json.message || 'Unauthenticated');
     }
