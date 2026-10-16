@@ -35,7 +35,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-xs shadow-sm">
           <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 shadow-sm shadow-emerald-500/50' : 'bg-rose-500'}`}></span>
           <span className="text-slate-700 font-medium">
-            {isOnline ? 'Laravel API :8000 Live' : 'Offline / Reconnecting'}
+            {isOnline ? 'Cloud API Connected' : 'Offline / Reconnecting'}
           </span>
         </div>
 
