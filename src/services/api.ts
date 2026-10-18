@@ -14,7 +14,9 @@ import {
   JoiningRequestCounts,
 } from '../types';
 
-const RAW_BASE = (import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://backend-gi0y.onrender.com' : '')).replace(/\/+$/, '');
+const RAW_BASE = (import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://backend-gi0y.onrender.com' : ''))
+  .replace(/\/+$/, '')
+  .replace(/\/api\/v1\/?$/, '');
 const API_BASE = `${RAW_BASE}/api/v1`;
 
 let isRefreshingAuth = false;
