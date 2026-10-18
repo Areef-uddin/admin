@@ -39,7 +39,7 @@ async function refreshAdminToken(): Promise<string | null> {
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify({ email: 'admin@zivbiyt.com', password: 'password123' }),
+        body: JSON.stringify({ email: 'admin@starforce.com', password: 'password123' }),
       });
       const data = await safeJson(res);
       if (res.ok && data.token) {
@@ -155,6 +155,25 @@ export const api = {
     await fetchWithAuth(`${API_BASE}/employees/${id}/deactivate`, {
       method: 'POST',
     });
+  },
+
+  async deleteEmployee(id: number): Promise<void> {
+    const res = await fetchWithAuth(`${API_BASE}/employees/${id}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      const json = await safeJson(res);
+      throw new Error(json.message || 'Failed to delete employee');
+    }
+  },
+
+  async purgeAllEmployees(): Promise<{ message: string }> {
+    const res = await fetchWithAuth(`${API_BASE}/employees/purge-all`, {
+      method: 'POST',
+    });
+    const json = await safeJson(res);
+    if (!res.ok) throw new Error(json.message || 'Failed to purge employees');
+    return json;
   },
 
   // Organization
@@ -276,6 +295,26 @@ export const api = {
     return res.json();
   },
 
+  async deletePayrollRun(runId: number): Promise<void> {
+    const res = await fetchWithAuth(`${API_BASE}/admin/payroll-runs/${runId}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to delete payroll run');
+    }
+  },
+
+  async purgeAllPayrollRuns(): Promise<void> {
+    const res = await fetchWithAuth(`${API_BASE}/admin/payroll-runs/purge-all`, {
+      method: 'POST',
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to purge payroll runs');
+    }
+  },
+
   // Audit Logs
   async getAuditLogs(): Promise<AuditLog[]> {
     const res = await fetchWithAuth(`${API_BASE}/admin/audit-logs`);
@@ -327,5 +366,30 @@ export const api = {
     const json = await res.json();
     if (!res.ok) throw new Error(json.message || 'Failed to reject joining request');
     return json.data;
+  },
+
+  // Field Officers & Referrals
+  async getFieldOfficers(): Promise<any[]> {
+    const res = await fetchWithAuth(`${API_BASE}/field-officers`);
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Failed to load field officers');
+    return json.data || [];
+  },
+
+  async getOfficerReferrals(code: string): Promise<any> {
+    const res = await fetchWithAuth(`${API_BASE}/field-officers/${code}/referrals`);
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Failed to load officer referrals');
+    return json.data || {};
+  },
+
+  async punchOfficer(code: string, action = 'toggle'): Promise<any> {
+    const res = await fetchWithAuth(`${API_BASE}/field-officers/${code}/punch`, {
+      method: 'POST',
+      body: JSON.stringify({ action }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Failed to punch duty');
+    return json;
   },
 };

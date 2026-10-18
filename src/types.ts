@@ -7,6 +7,7 @@ export interface User {
   avatar?: string;
   roles: string[];
   permissions?: string[];
+  joining_request?: JoiningRequest;
 }
 
 export interface Department {
@@ -75,6 +76,7 @@ export interface Employee {
   designation?: Designation;
   bank_account?: BankAccount;
   current_salary_assignment?: SalaryAssignment;
+  joining_request?: JoiningRequest;
 }
 
 export interface AttendanceRecord {
@@ -298,6 +300,12 @@ export interface JoiningRequest {
   // 8. Photo & Documents Submitted
   photo_url?: string;
   documents_submitted?: string[];
+  // Referral Details
+  referral_source?: string;
+  referred_by_name?: string;
+  referral_employee_code?: string;
+  referral_phone?: string;
+  referral_notes?: string;
   uploaded_documents?: Array<{
     title: string;
     file_name: string;

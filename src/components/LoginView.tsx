@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, Mail, ArrowRight } from 'lucide-react';
+import { Lock, Mail, ArrowRight, Shield } from 'lucide-react';
 
 interface LoginViewProps {
   onLogin: (email: string, pass: string) => Promise<void>;
@@ -7,7 +7,7 @@ interface LoginViewProps {
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({ onLogin, isLoading }) => {
-  const [email, setEmail] = useState('admin@zivbiyt.com');
+  const [email, setEmail] = useState('admin@starforce.com');
   const [password, setPassword] = useState('password123');
   const [error, setError] = useState<string | null>(null);
 
@@ -29,17 +29,17 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, isLoading }) => {
   return (
     <div className="min-h-screen w-full bg-slate-50 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Background radial effects */}
-      <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-indigo-100/60 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-1/4 right-1/3 w-96 h-96 bg-violet-100/60 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-blue-100/60 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute bottom-1/4 right-1/3 w-96 h-96 bg-indigo-100/60 rounded-full blur-3xl pointer-events-none"></div>
 
       <div className="w-full max-w-md rounded-3xl bg-white border border-slate-200/90 shadow-xl p-8 relative z-10">
         {/* Brand */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 mx-auto flex items-center justify-center text-white font-black text-2xl shadow-md shadow-indigo-600/20 mb-3 tracking-wider">
-            Z
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-400 mx-auto flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-blue-600/30 mb-3 border border-white/20">
+            <Shield className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Zivbiyt Payroll Core</h1>
-          <p className="text-xs text-slate-500 mt-1">Enterprise HR & Attendance Management System</p>
+          <h1 className="text-2xl font-black text-slate-900 tracking-tight">STARFORCE Core</h1>
+          <p className="text-xs text-slate-500 mt-1">Enterprise Workforce, Attendance & Payroll System</p>
         </div>
 
         {error && (
@@ -58,8 +58,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, isLoading }) => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@zivbiyt.com"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 shadow-sm"
+                placeholder="admin@starforce.com"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-sm"
               />
             </div>
           </div>
@@ -74,7 +74,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, isLoading }) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 shadow-sm"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 shadow-sm"
               />
             </div>
           </div>
@@ -82,13 +82,13 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, isLoading }) => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full mt-2 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+            className="w-full mt-2 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold text-sm shadow-md shadow-blue-600/25 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
           >
             {isLoading ? (
               <span>Authenticating...</span>
             ) : (
               <>
-                <span>Sign In to Dashboard</span>
+                <span>Sign In to Starforce</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
@@ -103,21 +103,21 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin, isLoading }) => {
           <div className="flex flex-wrap items-center justify-center gap-2">
             <button
               type="button"
-              onClick={() => handleQuickLogin('admin@zivbiyt.com')}
+              onClick={() => handleQuickLogin('admin@starforce.com')}
               className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] text-slate-700 border border-slate-200 transition-colors font-medium"
             >
               Super Admin
             </button>
             <button
               type="button"
-              onClick={() => handleQuickLogin('hr@zivbiyt.com')}
+              onClick={() => handleQuickLogin('hr@starforce.com')}
               className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] text-slate-700 border border-slate-200 transition-colors font-medium"
             >
               HR Admin
             </button>
             <button
               type="button"
-              onClick={() => handleQuickLogin('finance@zivbiyt.com')}
+              onClick={() => handleQuickLogin('finance@starforce.com')}
               className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-[11px] text-slate-700 border border-slate-200 transition-colors font-medium"
             >
               Finance / Payroll

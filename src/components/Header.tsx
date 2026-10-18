@@ -1,5 +1,5 @@
 import React from 'react';
-import { RefreshCw } from 'lucide-react';
+import { Menu, RefreshCw } from 'lucide-react';
 
 interface HeaderProps {
   title: string;
@@ -7,6 +7,7 @@ interface HeaderProps {
   isOnline: boolean;
   onRefresh?: () => void;
   isRefreshing?: boolean;
+  onToggleMobileMenu?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -15,6 +16,7 @@ export const Header: React.FC<HeaderProps> = ({
   isOnline,
   onRefresh,
   isRefreshing,
+  onToggleMobileMenu,
 }) => {
   const currentDate = new Date().toLocaleDateString('en-IN', {
     weekday: 'short',
@@ -24,10 +26,21 @@ export const Header: React.FC<HeaderProps> = ({
   });
 
   return (
-    <header className="h-18 px-8 border-b border-slate-200 bg-white/90 backdrop-blur-md flex items-center justify-between shrink-0 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-      <div>
-        <h1 className="text-xl font-bold text-slate-900 tracking-tight leading-tight">{title}</h1>
-        {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
+    <header className="h-16 sm:h-18 px-4 sm:px-8 border-b border-slate-200 bg-white/90 backdrop-blur-md flex items-center justify-between shrink-0 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+      <div className="flex items-center gap-3 min-w-0">
+        {onToggleMobileMenu && (
+          <button
+            onClick={onToggleMobileMenu}
+            className="p-2 -ml-1 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 lg:hidden border border-slate-200/60 shadow-sm"
+            title="Toggle Menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+        <div className="min-w-0">
+          <h1 className="text-base sm:text-xl font-bold text-slate-900 tracking-tight leading-tight truncate">{title}</h1>
+          {subtitle && <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate hidden xs:block">{subtitle}</p>}
+        </div>
       </div>
 
       <div className="flex items-center gap-4">

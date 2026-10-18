@@ -35,7 +35,7 @@ export const SalaryStructureView: React.FC = () => {
             <span>Salary Architecture & Statutory Rules</span>
           </h2>
           <p className="text-xs text-slate-500 mt-1 max-w-2xl">
-            Zivbiyt salary policy follows effective-dated versioning. CTC is structured across Basic, HRA, statutory EPF (12%), State Professional Tax (₹200), and attendance LOP rules.
+            Starforce salary policy follows effective-dated versioning. CTC is structured across Basic, HRA, statutory EPF (12%), State Professional Tax (₹200), and attendance LOP rules.
           </p>
         </div>
 

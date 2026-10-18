@@ -67,9 +67,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ kpis, onNavigate }
         <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-indigo-50/60 to-transparent pointer-events-none"></div>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
           <div>
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-200/70 text-indigo-700 text-xs font-semibold mb-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
-              Zivbiyt Payroll & Workforce Core
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-blue-50 border border-blue-200/70 text-blue-700 text-xs font-semibold mb-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+              Starforce Payroll & Workforce Core
             </div>
             <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
               Company Operations & Salary Management

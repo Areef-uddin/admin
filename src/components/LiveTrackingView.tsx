@@ -88,16 +88,16 @@ export const LiveTrackingView: React.FC<LiveTrackingViewProps> = ({
 
       tileLayerRef.current = tileLayer;
 
-      // Zivbiyt HQ Marker
+      // Starforce HQ Marker
       const hqIcon = L.divIcon({
         className: 'hq-marker-wrapper',
         html: `
           <div style="display:flex;flex-direction:column;align-items:center;">
-            <div style="width:30px;height:30px;border-radius:10px;background:#4f46e5;color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:10px;border:2px solid #818cf8;box-shadow:0 4px 12px rgba(79,70,229,0.5);">
+            <div style="width:30px;height:30px;border-radius:10px;background:#2563eb;color:white;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:10px;border:2px solid #60a5fa;box-shadow:0 4px 12px rgba(37,99,235,0.5);">
               HQ
             </div>
             <div style="font-size:9px;font-weight:700;color:#1e293b;background:#ffffff;padding:1px 5px;border-radius:4px;border:1px solid #cbd5e1;margin-top:2px;white-space:nowrap;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
-              Zivbiyt HQ
+              Starforce HQ
             </div>
           </div>
         `,
@@ -107,7 +107,7 @@ export const LiveTrackingView: React.FC<LiveTrackingViewProps> = ({
 
       hqMarkerRef.current = L.marker([12.9352, 77.6245], { icon: hqIcon })
         .addTo(map)
-        .bindPopup('<b>Zivbiyt Headquarters</b><br>Koramangala, Bangalore');
+        .bindPopup('<b>Starforce Headquarters</b><br>Outer Ring Road, Bangalore');
 
       mapInstanceRef.current = map;
     }

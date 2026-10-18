@@ -44,8 +44,48 @@ export const JoiningRequestsView: React.FC<JoiningRequestsViewProps> = ({ onUpda
 
   const resolveFileUrl = (url?: string) => {
     if (!url) return '';
-    if (url.startsWith('http://') || url.startsWith('https://')) return url;
-    return `http://127.0.0.1:8000${url.startsWith('/') ? '' : '/'}${url}`;
+    // If it's a data URI (base64 image/document), return as-is
+    if (url.startsWith('data:')) return url;
+
+    // Fix insecure HTTP URLs on production HTTPS domain to avoid Mixed Content block
+    if (url.startsWith('http://backend-gi0y.onrender.com')) {
+      url = url.replace('http://', 'https://');
+    }
+
+    // Rewrite localhost URLs to Render when viewing from hosted production
+    if (url.startsWith('http://localhost') || url.startsWith('http://127.0.0.1')) {
+      if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+        const path = url.replace(/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/, '');
+        if (path.includes('/storage/joining_docs/')) {
+          const filename = path.split('/storage/joining_docs/')[1];
+          return `https://backend-gi0y.onrender.com/api/v1/joining/documents/${filename}`;
+        }
+        return `https://backend-gi0y.onrender.com${path.startsWith('/') ? '' : '/'}${path}`;
+      }
+      return url;
+    }
+
+    // If it's a Render storage URL, prefer the resilient streaming endpoint
+    if (url.includes('backend-gi0y.onrender.com/storage/joining_docs/')) {
+      const filename = url.split('/storage/joining_docs/')[1];
+      return `https://backend-gi0y.onrender.com/api/v1/joining/documents/${filename}`;
+    }
+
+    if (url.startsWith('https://')) return url;
+    if (url.startsWith('http://')) return url.replace('http://', 'https://');
+
+    // Relative URLs
+    const base = (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+      ? 'http://127.0.0.1:8000'
+      : 'https://backend-gi0y.onrender.com';
+
+    // If it's a relative /storage/joining_docs path, route to streaming endpoint
+    if (url.includes('joining_docs/')) {
+      const filename = url.split('joining_docs/')[1];
+      return `${base}/api/v1/joining/documents/${filename}`;
+    }
+
+    return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
   };
 
   // Form options from backend
@@ -394,6 +434,7 @@ export const JoiningRequestsView: React.FC<JoiningRequestsViewProps> = ({ onUpda
                   <tr>
                     <th className="py-3.5 px-4">Applicant / Worker</th>
                     <th className="py-3.5 px-4">Proposed Role & Location</th>
+                    <th className="py-3.5 px-4">Referral Source</th>
                     <th className="py-3.5 px-4">Date of Joining</th>
                     <th className="py-3.5 px-4">Statutory KYC</th>
                     <th className="py-3.5 px-4">Docs Submitted</th>
@@ -439,6 +480,27 @@ export const JoiningRequestsView: React.FC<JoiningRequestsViewProps> = ({ onUpda
                           <MapPin className="w-3 h-3 text-slate-400" />
                           <span>{req.branch_location || req.proposed_department || 'Headquarters'}</span>
                         </div>
+                      </td>
+
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        {req.referral_source === 'Employee Referral' ? (
+                          <div className="flex flex-col">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              🎁 Ref: {req.referred_by_name || 'Employee'}
+                            </span>
+                            {req.referral_employee_code && (
+                              <span className="text-[10px] text-slate-400 mt-0.5 font-mono">ID: {req.referral_employee_code}</span>
+                            )}
+                          </div>
+                        ) : req.referral_source && req.referral_source !== 'Direct Application / Walk-in' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            {req.referral_source}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600">
+                            Direct / Walk-in
+                          </span>
+                        )}
                       </td>
 
                       <td className="py-3.5 px-4 text-slate-700">
@@ -766,6 +828,41 @@ export const JoiningRequestsView: React.FC<JoiningRequestsViewProps> = ({ onUpda
                   <div>
                     <span className="text-slate-400 block text-[11px]">Reporting Officer / Manager</span>
                     <span className="font-semibold text-slate-800">{selectedRequest.reporting_officer || '—'}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Referral & Reference Information */}
+              <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2 font-bold text-slate-900 text-sm">
+                    <UserCheck className="w-4 h-4 text-emerald-600" />
+                    <span>Referral & Reference Information</span>
+                  </div>
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                    selectedRequest.referral_source === 'Employee Referral'
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                      : 'bg-slate-100 text-slate-700 border border-slate-200'
+                  }`}>
+                    {selectedRequest.referral_source || 'Direct Application / Walk-in'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div>
+                    <span className="text-slate-400 block text-[11px]">Referred By (Name)</span>
+                    <span className="font-semibold text-slate-800">{selectedRequest.referred_by_name || 'N/A (Direct Application)'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[11px]">Referral Employee Code</span>
+                    <span className="font-semibold font-mono text-slate-800">{selectedRequest.referral_employee_code || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[11px]">Referral Contact Phone</span>
+                    <span className="font-semibold text-slate-800">{selectedRequest.referral_phone || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block text-[11px]">Relation / Notes</span>
+                    <span className="font-semibold text-slate-800">{selectedRequest.referral_notes || '—'}</span>
                   </div>
                 </div>
               </div>
@@ -1485,11 +1582,21 @@ export const JoiningRequestsView: React.FC<JoiningRequestsViewProps> = ({ onUpda
             </div>
 
             <div className="p-6 flex-1 overflow-auto flex items-center justify-center bg-slate-900/5 min-h-[360px]">
-              {previewDoc.file_url.match(/\.(jpg|jpeg|png|webp|gif)$/i) || previewDoc.mime_type?.startsWith('image') ? (
+              {previewDoc.file_url.startsWith('data:image') ||
+              previewDoc.file_url.match(/\.(jpg|jpeg|png|webp|gif)($|\?)/i) ||
+              previewDoc.mime_type?.startsWith('image') ? (
                 <img
                   src={previewDoc.file_url}
                   alt={previewDoc.title}
                   className="max-h-[72vh] max-w-full rounded-xl object-contain shadow-md bg-white p-1 border border-slate-200"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    if (!target.dataset.tried && previewDoc.file_url.includes('/api/v1/joining/documents/')) {
+                      target.dataset.tried = 'true';
+                      const fn = previewDoc.file_url.split('/api/v1/joining/documents/')[1];
+                      target.src = `https://backend-gi0y.onrender.com/storage/joining_docs/${fn}`;
+                    }
+                  }}
                 />
               ) : (
                 <iframe

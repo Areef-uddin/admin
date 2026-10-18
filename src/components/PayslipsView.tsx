@@ -115,12 +115,12 @@ export const PayslipsView: React.FC<PayslipsViewProps> = ({ items, payrollMonth 
             {/* Top Bar inside modal */}
             <div className="flex items-center justify-between pb-6 border-b border-slate-200">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white font-bold flex items-center justify-center text-lg shadow-sm">
-                  Z
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-bold flex items-center justify-center text-lg shadow-sm">
+                  SF
                 </div>
                 <div>
-                  <h3 className="text-lg font-black tracking-tight text-slate-900">ZIVBIYT TECHNOLOGIES PRIVATE LIMITED</h3>
-                  <p className="text-xs text-slate-500">Koramangala 4th Block, Bangalore, Karnataka — 560034</p>
+                  <h3 className="text-lg font-black tracking-tight text-slate-900">STARFORCE FACILITIES & WORKFORCE MANAGEMENT PVT LTD</h3>
+                  <p className="text-xs text-slate-500">Outer Ring Road, Bellandur, Bangalore, Karnataka — 560103</p>
                 </div>
               </div>
 

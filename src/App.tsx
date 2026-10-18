@@ -11,6 +11,7 @@ import { PayrollProcessingView } from './components/PayrollProcessingView';
 import { PayslipsView } from './components/PayslipsView';
 import { AuditLogsView } from './components/AuditLogsView';
 import { JoiningRequestsView } from './components/JoiningRequestsView';
+import { FieldOfficersReferralView } from './components/FieldOfficersReferralView';
 import { LoginView } from './components/LoginView';
 import { api } from './services/api';
 import {
@@ -49,6 +50,8 @@ export function App() {
   const [payrollRuns, setPayrollRuns] = useState<PayrollRun[]>([]);
   const [currentRun, setCurrentRun] = useState<PayrollRun | null>(null);
   const [payrollItems, setPayrollItems] = useState<PayrollItem[]>([]);
+  const [selectedPayrollMonth, setSelectedPayrollMonth] = useState<string>('2026-10');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [pendingJoiningCount, setPendingJoiningCount] = useState<number>(0);
 
@@ -76,7 +79,7 @@ export function App() {
   const handleAutoLogin = async () => {
     setIsAuthLoading(true);
     try {
-      const res = await api.login('admin@zivbiyt.com', 'password123');
+      const res = await api.login('admin@starforce.com', 'password123');
       setCurrentUser(res.user);
       setIsOnline(true);
       await fetchAllData();
@@ -145,11 +148,12 @@ export function App() {
 
 
       if (runRes.status === 'fulfilled') {
-        setPayrollRuns(runRes.value);
-        const latest = runRes.value[0] || null;
-        setCurrentRun(latest);
-        if (latest) {
-          const preview = await api.previewPayroll(latest.id);
+        const runs = runRes.value || [];
+        setPayrollRuns(runs);
+        const match = runs.find((r: PayrollRun) => r.payroll_month === selectedPayrollMonth) || runs[0] || null;
+        setCurrentRun(match);
+        if (match) {
+          const preview = await api.previewPayroll(match.id);
           setPayrollItems(preview.items || []);
         } else {
           setPayrollItems([]);
@@ -223,6 +227,20 @@ export function App() {
     );
   };
 
+  // Delete Employee Permanently
+  const handleDeleteEmployee = async (id: number) => {
+    await api.deleteEmployee(id);
+    setEmployees(employees.filter((emp) => emp.id !== id));
+    api.getDashboardKPIs().then(setKpis).catch(console.error);
+  };
+
+  // Purge All Test Employees
+  const handlePurgeAllEmployees = async () => {
+    await api.purgeAllEmployees();
+    setEmployees([]);
+    api.getDashboardKPIs().then(setKpis).catch(console.error);
+  };
+
   // Leave Actions
   const handleApproveLeave = async (id: number, remarks?: string) => {
     await api.approveLeave(id, remarks);
@@ -245,14 +263,52 @@ export function App() {
   };
 
   // Payroll Actions
+  const handlePayrollMonthChange = async (month: string) => {
+    setSelectedPayrollMonth(month);
+    const existingRun = payrollRuns.find((r) => r.payroll_month === month);
+    if (existingRun) {
+      setCurrentRun(existingRun);
+      try {
+        const preview = await api.previewPayroll(existingRun.id);
+        setPayrollItems(preview.items || []);
+      } catch (e) {
+        console.error(e);
+        setPayrollItems([]);
+      }
+    } else {
+      setCurrentRun(null);
+      setPayrollItems([]);
+    }
+  };
+
   const handleInitializeMonth = async (month: string) => {
     setIsProcessing(true);
     try {
       const run = await api.createPayrollRun(month);
-      setCurrentRun(run);
-      setPayrollRuns([run, ...payrollRuns.filter((r) => r.id !== run.id)]);
+      // Immediately calculate calculations
+      await api.calculatePayroll(run.id);
       const preview = await api.previewPayroll(run.id);
-      setPayrollItems(preview.items);
+      setCurrentRun(preview.run);
+      setPayrollItems(preview.items || []);
+      setPayrollRuns([preview.run, ...payrollRuns.filter((r) => r.id !== run.id)]);
+      api.getDashboardKPIs().then(setKpis).catch(console.error);
+    } catch (err: any) {
+      alert(err.message || 'Failed to initialize payroll run');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleDeletePayrollRun = async (runId: number) => {
+    setIsProcessing(true);
+    try {
+      await api.deletePayrollRun(runId);
+      setPayrollRuns(payrollRuns.filter((r) => r.id !== runId));
+      setCurrentRun(null);
+      setPayrollItems([]);
+      api.getDashboardKPIs().then(setKpis).catch(console.error);
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete payroll run');
     } finally {
       setIsProcessing(false);
     }
@@ -365,6 +421,8 @@ export function App() {
         onLogout={handleLogout}
         onDutyCount={trackingList.length}
         pendingJoiningCount={pendingJoiningCount}
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
       />
 
       {/* Main Content Area */}
@@ -375,15 +433,20 @@ export function App() {
           isOnline={isOnline}
           onRefresh={fetchAllData}
           isRefreshing={isRefreshing}
+          onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
         />
 
-        <main className="flex-1 overflow-y-auto p-8 bg-slate-50">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50">
           {currentTab === 'dashboard' && (
             <DashboardView kpis={kpis} onNavigate={setCurrentTab} />
           )}
 
           {currentTab === 'joining-requests' && (
             <JoiningRequestsView onUpdated={fetchAllData} />
+          )}
+
+          {currentTab === 'field-referrals' && (
+            <FieldOfficersReferralView />
           )}
 
           {currentTab === 'employees' && (
@@ -393,6 +456,8 @@ export function App() {
               designations={designations}
               onAddEmployee={handleAddEmployee}
               onDeactivateEmployee={handleDeactivateEmployee}
+              onDeleteEmployee={handleDeleteEmployee}
+              onPurgeAllEmployees={handlePurgeAllEmployees}
             />
           )}
 
@@ -430,11 +495,14 @@ export function App() {
             <PayrollProcessingView
               currentRun={currentRun}
               items={payrollItems}
+              selectedMonth={selectedPayrollMonth}
+              onMonthChange={handlePayrollMonthChange}
               onInitializeMonth={handleInitializeMonth}
               onCalculate={handleCalculatePayroll}
               onApprove={handleApprovePayroll}
               onFinalize={handleFinalizePayroll}
               onPublish={handlePublishPayslips}
+              onDeleteRun={handleDeletePayrollRun}
               isProcessing={isProcessing}
             />
           )}
@@ -442,7 +510,7 @@ export function App() {
           {currentTab === 'payslips' && (
             <PayslipsView
               items={payrollItems}
-              payrollMonth={currentRun?.payroll_month || '2026-10'}
+              payrollMonth={currentRun?.payroll_month || selectedPayrollMonth}
             />
           )}
 

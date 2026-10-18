@@ -1,76 +1,102 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Banknote,
   CheckCircle,
   Lock,
   Send,
   Sparkles,
+  Trash2,
+  Calendar,
+  FileCheck,
 } from 'lucide-react';
 import { PayrollRun, PayrollItem } from '../types';
 
 interface PayrollProcessingViewProps {
   currentRun: PayrollRun | null;
   items: PayrollItem[];
+  selectedMonth: string;
+  onMonthChange: (month: string) => void;
   onInitializeMonth: (month: string) => Promise<void>;
   onCalculate: () => Promise<void>;
   onApprove: () => Promise<void>;
   onFinalize: () => Promise<void>;
   onPublish: () => Promise<void>;
+  onDeleteRun?: (runId: number) => Promise<void>;
   isProcessing: boolean;
 }
 
 export const PayrollProcessingView: React.FC<PayrollProcessingViewProps> = ({
   currentRun,
   items,
+  selectedMonth,
+  onMonthChange,
   onInitializeMonth,
   onCalculate,
   onApprove,
   onFinalize,
   onPublish,
+  onDeleteRun,
   isProcessing,
 }) => {
-  const [selectedMonth, setSelectedMonth] = useState('2026-10');
-
-  const status = currentRun?.status || 'draft';
+  const status = currentRun?.status || 'uninitialized';
   const isCalculated = status === 'calculated';
   const isApproved = status === 'approved';
   const isFinalized = status === 'finalized';
   const isPublished = status === 'published';
+
+  // Format month for display (e.g. "2026-10" -> "October, 2026")
+  const formatMonthTitle = (monthStr: string) => {
+    try {
+      const [y, m] = monthStr.split('-');
+      const d = new Date(parseInt(y), parseInt(m) - 1, 1);
+      return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    } catch {
+      return monthStr;
+    }
+  };
 
   return (
     <div className="space-y-6">
       {/* Top Controls & Month Picker */}
       <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <h2 className="text-xl font-bold text-slate-900 tracking-tight">Monthly Payroll Engine</h2>
-            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
-              isPublished
-                ? 'bg-purple-50 text-purple-700 border-purple-200'
-                : isFinalized
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                : isApproved
-                ? 'bg-blue-50 text-blue-700 border-blue-200'
-                : isCalculated
-                ? 'bg-amber-50 text-amber-700 border-amber-200'
-                : 'bg-slate-100 text-slate-600 border-slate-200'
-            }`}>
-              {status}
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
+                isPublished
+                  ? 'bg-purple-50 text-purple-700 border-purple-200'
+                  : isFinalized
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : isApproved
+                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                  : isCalculated
+                  ? 'bg-amber-50 text-amber-700 border-amber-200'
+                  : currentRun
+                  ? 'bg-slate-100 text-slate-700 border-slate-300'
+                  : 'bg-slate-50 text-slate-500 border-slate-200'
+              }`}
+            >
+              {currentRun ? status : 'No Cycle Found'}
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Execute attendance-linked gross calculations, statutory PF/ESI/PT deductions, and immutable payslip snapshots.
+            Execute attendance-linked calculations, statutory PF/ESI/PT deductions, and immutable payslip snapshots for{' '}
+            <strong className="text-slate-700 font-semibold">{formatMonthTitle(selectedMonth)}</strong>.
           </p>
         </div>
 
-        {/* Action Pipeline Buttons */}
+        {/* Action Pipeline Buttons & Calendar Picker */}
         <div className="flex flex-wrap items-center gap-3">
-          <input
-            type="month"
-            value={selectedMonth}
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="px-3.5 py-2 rounded-xl bg-white border border-slate-200 text-sm text-slate-800 focus:outline-none focus:border-indigo-600 font-mono shadow-sm"
-          />
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 shadow-sm">
+            <Calendar className="w-4 h-4 text-slate-500" />
+            <input
+              type="month"
+              value={selectedMonth}
+              onChange={(e) => onMonthChange(e.target.value)}
+              className="bg-transparent text-sm text-slate-800 font-medium focus:outline-none cursor-pointer"
+            />
+          </div>
 
           {!currentRun && (
             <button
@@ -78,8 +104,8 @@ export const PayrollProcessingView: React.FC<PayrollProcessingViewProps> = ({
               disabled={isProcessing}
               className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center gap-2 shadow-sm transition-all disabled:opacity-50"
             >
-              <Banknote className="w-4 h-4" />
-              <span>Initialize Cycle</span>
+              <Sparkles className="w-4 h-4" />
+              <span>Initialize & Calculate {selectedMonth}</span>
             </button>
           )}
 
@@ -122,7 +148,7 @@ export const PayrollProcessingView: React.FC<PayrollProcessingViewProps> = ({
               )}
 
               {/* 4. Publish Payslips */}
-              {isFinalized && (
+              {(isFinalized || isApproved) && !isPublished && (
                 <button
                   onClick={onPublish}
                   disabled={isProcessing}
@@ -132,14 +158,31 @@ export const PayrollProcessingView: React.FC<PayrollProcessingViewProps> = ({
                   <span>Publish Payslips</span>
                 </button>
               )}
+
+              {/* 5. Delete / Reset Cycle */}
+              {onDeleteRun && (
+                <button
+                  onClick={() => {
+                    if (window.confirm(`Are you sure you want to delete and reset the payroll run for ${selectedMonth}?`)) {
+                      onDeleteRun(currentRun.id);
+                    }
+                  }}
+                  disabled={isProcessing}
+                  className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all disabled:opacity-50"
+                  title="Delete this cycle from database"
+                >
+                  <Trash2 className="w-4 h-4 text-rose-600" />
+                  <span className="hidden sm:inline">Reset Cycle</span>
+                </button>
+              )}
             </>
           )}
         </div>
       </div>
 
-      {/* Financial Summary Cards */}
-      {currentRun && (
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      {/* Financial Summary Cards or Empty State */}
+      {currentRun ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="p-4 rounded-xl bg-white border border-slate-200/90 shadow-sm">
             <span className="text-xs text-slate-500 font-semibold uppercase">Total Employees</span>
             <div className="text-2xl font-bold text-slate-900 mt-1">{currentRun.total_employees}</div>
@@ -170,16 +213,47 @@ export const PayrollProcessingView: React.FC<PayrollProcessingViewProps> = ({
             <div className="text-[11px] text-indigo-600/80 mt-0.5">Bank transfer total</div>
           </div>
         </div>
+      ) : (
+        <div className="p-8 rounded-2xl bg-white border border-slate-200/90 shadow-sm text-center">
+          <div className="w-14 h-14 rounded-2xl bg-indigo-50 border border-indigo-200/70 text-indigo-600 mx-auto flex items-center justify-center mb-4 shadow-sm">
+            <Calendar className="w-7 h-7" />
+          </div>
+          <h3 className="text-base font-bold text-slate-900">
+            No Payroll Run Calculated for {formatMonthTitle(selectedMonth)}
+          </h3>
+          <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 mb-5">
+            Previous test salary records have been completely purged from the database. Use the calendar picker to select any month and generate fresh, verified payroll records.
+          </p>
+          <button
+            onClick={() => onInitializeMonth(selectedMonth)}
+            disabled={isProcessing}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-md shadow-indigo-600/20 transition-all disabled:opacity-50"
+          >
+            <Banknote className="w-4 h-4" />
+            <span>Generate Payroll for {formatMonthTitle(selectedMonth)}</span>
+          </button>
+        </div>
       )}
 
       {/* Item-wise Breakdown Table */}
       <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-sm">
-        <div className="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-            Employee Payroll Register ({items.length})
-          </h3>
+        <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <FileCheck className="w-4 h-4 text-indigo-600" />
+            <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+              Employee Payroll Register ({items.length})
+            </h3>
+          </div>
           <span className="text-xs text-slate-500 font-mono">
-            {isPublished ? 'Status: Published to Mobile Apps' : isFinalized ? 'Status: Locked' : 'Status: Reviewing'}
+            {isPublished
+              ? 'Status: Published to Mobile Apps'
+              : isFinalized
+              ? 'Status: Locked'
+              : isApproved
+              ? 'Status: Approved'
+              : currentRun
+              ? 'Status: Draft / Reviewing'
+              : 'Status: Uninitialized'}
           </span>
         </div>
 
