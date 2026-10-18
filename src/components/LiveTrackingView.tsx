@@ -188,7 +188,14 @@ export const LiveTrackingView: React.FC<LiveTrackingViewProps> = ({
     setSelectedEmp(null);
   };
 
-  const activeOnDutyCount = trackingList.filter((e) => e.status === 'online').length;
+  // Only show true field service technicians & employees, exclude field officers (SF-FO)
+  const employeeTrackingList = trackingList.filter((e) => {
+    if (e.employee_code && e.employee_code.startsWith('SF-FO')) return false;
+    if (e.designation && e.designation.toLowerCase().includes('field operations officer')) return false;
+    return true;
+  });
+
+  const activeOnDutyCount = employeeTrackingList.filter((e) => e.status === 'online').length;
 
   return (
     <div className="space-y-6">
@@ -252,22 +259,22 @@ export const LiveTrackingView: React.FC<LiveTrackingViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
-              {trackingList.length === 0 ? (
+              {employeeTrackingList.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-14 text-center">
                     <div className="flex flex-col items-center justify-center gap-3">
                       <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200">
                         <Radio className="w-6 h-6" />
                       </div>
-                      <div className="text-slate-800 font-semibold">No Active Tracking Sessions Found</div>
+                      <div className="text-slate-800 font-semibold">No Active Field Employees on Telemetry</div>
                       <p className="text-xs text-slate-500 max-w-sm">
-                        Employees will appear here automatically when they check in from the mobile app.
+                        Field technicians and employees will appear here automatically when on active duty shifts. Field officers are monitored under the dedicated &ldquo;Field Officers &amp; Referrals&rdquo; portal.
                       </p>
                     </div>
                   </td>
                 </tr>
               ) : (
-                trackingList.map((emp) => {
+                employeeTrackingList.map((emp) => {
                   const isOnline = emp.status === 'online';
                   const mins = emp.minutes_ago !== null && emp.minutes_ago !== undefined ? Math.round(emp.minutes_ago) : null;
                   const pingText = !isOnline ? 'Off Duty' : mins === null ? 'Just now' : mins === 0 ? 'Just now' : `${mins}m ago`;
