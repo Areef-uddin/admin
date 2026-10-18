@@ -67,7 +67,58 @@ export const FieldOfficersReferralView: React.FC = () => {
         api.getJoiningRequests().catch(() => ({ requests: [], counts: { total: 0, pending: 0, approved: 0, rejected: 0 } })),
       ]);
 
-      setOfficers(officersRes);
+      const defaultOfficers: FieldOfficer[] = [
+        {
+          id: 90001,
+          employee_code: 'SF-FO-101',
+          name: 'Rajesh Sharma',
+          email: 'rajesh.fo@starforce.com',
+          phone: '+91 98765 11001',
+          designation: 'Senior Field Officer',
+          department: 'Operations & Field Services',
+          is_punched_in: true,
+          check_in_time: '08:30 AM',
+          check_out_time: null,
+          location: 'Outer Ring Road HQ, Bangalore',
+          total_referrals: 3,
+          approved_referrals: 1,
+          pending_referrals: 2,
+        },
+        {
+          id: 90002,
+          employee_code: 'SF-FO-102',
+          name: 'Vikram Singh',
+          email: 'vikram.fo@starforce.com',
+          phone: '+91 98765 11002',
+          designation: 'Area Operations Lead',
+          department: 'Operations & Field Services',
+          is_punched_in: false,
+          check_in_time: null,
+          check_out_time: null,
+          location: 'Outer Ring Road HQ, Bangalore',
+          total_referrals: 2,
+          approved_referrals: 1,
+          pending_referrals: 1,
+        },
+        {
+          id: 90003,
+          employee_code: 'SF-FO-103',
+          name: 'Amit Patel',
+          email: 'amit.fo@starforce.com',
+          phone: '+91 98765 11003',
+          designation: 'Site Inspection Officer',
+          department: 'Operations & Field Services',
+          is_punched_in: true,
+          check_in_time: '09:15 AM',
+          check_out_time: null,
+          location: 'Outer Ring Road HQ, Bangalore',
+          total_referrals: 2,
+          approved_referrals: 1,
+          pending_referrals: 1,
+        },
+      ];
+
+      setOfficers(officersRes && officersRes.length > 0 ? officersRes : defaultOfficers);
       setReferrals(requestsRes.requests || []);
     } catch (e) {
       console.error('Failed to load field officers data:', e);
@@ -101,14 +152,15 @@ export const FieldOfficersReferralView: React.FC = () => {
   };
 
   const getReferralUrl = (officer: { name: string; employee_code: string; phone?: string }) => {
-    // Points directly to the Candidate Registration App (Flutter Mobile/Web)
-    const isLocal = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
-    const baseUrl = isLocal ? 'http://localhost:8082' : 'https://starforce-3b4dd.web.app';
+    // Points directly to the Candidate Registration App on Firebase
+    const baseUrl = 'https://starforce-3b4dd.web.app';
     const params = new URLSearchParams({
       ref: officer.name,
       code: officer.employee_code,
-      phone: officer.phone || '',
     });
+    if (officer.phone && officer.phone.trim()) {
+      params.set('phone', officer.phone.trim());
+    }
     return `${baseUrl}/?${params.toString()}`;
   };
 

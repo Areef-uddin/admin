@@ -371,14 +371,14 @@ export const api = {
   // Field Officers & Referrals
   async getFieldOfficers(): Promise<any[]> {
     const res = await fetchWithAuth(`${API_BASE}/field-officers`);
-    const json = await res.json();
+    const json = await safeJson(res);
     if (!res.ok) throw new Error(json.message || 'Failed to load field officers');
     return json.data || [];
   },
 
   async getOfficerReferrals(code: string): Promise<any> {
     const res = await fetchWithAuth(`${API_BASE}/field-officers/${code}/referrals`);
-    const json = await res.json();
+    const json = await safeJson(res);
     if (!res.ok) throw new Error(json.message || 'Failed to load officer referrals');
     return json.data || {};
   },
@@ -388,7 +388,7 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ action }),
     });
-    const json = await res.json();
+    const json = await safeJson(res);
     if (!res.ok) throw new Error(json.message || 'Failed to punch duty');
     return json;
   },
