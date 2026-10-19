@@ -189,15 +189,16 @@ export const FieldOfficersReferralView: React.FC = () => {
     }
   };
 
-  // Filter referrals: only show candidate requests with referral info
+  // Filter referrals: strictly require real referral info (officer name or employee code)
   const referredCandidates = referrals.filter((r) => {
-    const hasReferral = Boolean(r.referred_by_name || r.referral_employee_code || r.referral_source === 'Employee Referral');
-    if (!hasReferral) return false;
+    const hasOfficerName = Boolean(r.referred_by_name && r.referred_by_name.trim().length > 0);
+    const hasOfficerCode = Boolean(r.referral_employee_code && r.referral_employee_code.trim().length > 0);
+    if (!hasOfficerName && !hasOfficerCode) return false;
 
     if (selectedOfficerCode !== 'all') {
-      const matchCode = r.referral_employee_code === selectedOfficerCode;
+      const matchCode = hasOfficerCode && r.referral_employee_code === selectedOfficerCode;
       const targetOfficer = officers.find((o) => o.employee_code === selectedOfficerCode);
-      const matchName = targetOfficer && r.referred_by_name && r.referred_by_name.toLowerCase().includes(targetOfficer.name.toLowerCase());
+      const matchName = targetOfficer && hasOfficerName && r.referred_by_name!.toLowerCase().includes(targetOfficer.name.toLowerCase());
       if (!matchCode && !matchName) return false;
     }
 
@@ -216,9 +217,9 @@ export const FieldOfficersReferralView: React.FC = () => {
     return true;
   });
 
-  const totalReferralsCount = referrals.filter((r) => r.referred_by_name || r.referral_employee_code).length;
-  const approvedReferralsCount = referrals.filter((r) => (r.referred_by_name || r.referral_employee_code) && r.status === 'approved').length;
-  const pendingReferralsCount = referrals.filter((r) => (r.referred_by_name || r.referral_employee_code) && r.status === 'pending').length;
+  const totalReferralsCount = referrals.filter((r) => (r.referred_by_name && r.referred_by_name.trim()) || (r.referral_employee_code && r.referral_employee_code.trim())).length;
+  const approvedReferralsCount = referrals.filter((r) => ((r.referred_by_name && r.referred_by_name.trim()) || (r.referral_employee_code && r.referral_employee_code.trim())) && r.status === 'approved').length;
+  const pendingReferralsCount = referrals.filter((r) => ((r.referred_by_name && r.referred_by_name.trim()) || (r.referral_employee_code && r.referral_employee_code.trim())) && r.status === 'pending').length;
   const activeDutyOfficersCount = officers.filter((o) => o.is_punched_in).length;
 
   return (
