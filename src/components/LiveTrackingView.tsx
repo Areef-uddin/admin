@@ -30,6 +30,7 @@ export const LiveTrackingView: React.FC<LiveTrackingViewProps> = ({
   const [selectedEmp, setSelectedEmp] = useState<TrackingEmployee | null>(null);
   const [mapLayerType, setMapLayerType] = useState<'google' | 'osm' | 'satellite'>('google');
   const [autoRefresh, setAutoRefresh] = useState<boolean>(true);
+  const [roleFilter, setRoleFilter] = useState<'all' | 'officers' | 'technicians'>('all');
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -188,14 +189,20 @@ export const LiveTrackingView: React.FC<LiveTrackingViewProps> = ({
     setSelectedEmp(null);
   };
 
-  // Only show true field service technicians & employees, exclude field officers (SF-FO)
+  const isOfficer = (emp: TrackingEmployee) =>
+    (emp.employee_code && emp.employee_code.startsWith('SF-FO')) ||
+    (emp.designation && emp.designation.toLowerCase().includes('field operations officer')) ||
+    (emp.department && emp.department.toLowerCase().includes('recruitment'));
+
   const employeeTrackingList = trackingList.filter((e) => {
-    if (e.employee_code && e.employee_code.startsWith('SF-FO')) return false;
-    if (e.designation && e.designation.toLowerCase().includes('field operations officer')) return false;
+    if (roleFilter === 'officers') return isOfficer(e);
+    if (roleFilter === 'technicians') return !isOfficer(e);
     return true;
   });
 
   const activeOnDutyCount = employeeTrackingList.filter((e) => e.status === 'online').length;
+  const totalOfficersCount = trackingList.filter(isOfficer).length;
+  const totalTechniciansCount = trackingList.filter((e) => !isOfficer(e)).length;
 
   return (
     <div className="space-y-6">
@@ -207,18 +214,52 @@ export const LiveTrackingView: React.FC<LiveTrackingViewProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2.5">
-              <h2 className="text-lg font-bold text-slate-900 tracking-tight">Field Workforce Live Telemetry</h2>
+              <h2 className="text-lg font-bold text-slate-900 tracking-tight">Workforce Live Telemetry Radar</h2>
               <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                 {activeOnDutyCount} Active On-Duty
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Live GPS location streaming during active shifts • Click &ldquo;Track on Map&rdquo; to view real-time radar
+              Real-time GPS tracking for field officers & technicians • Live coordinates streamed during duty shifts
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 self-start sm:self-auto">
+        <div className="flex items-center gap-3 self-start sm:self-auto flex-wrap">
+          {/* Role Filter Tabs */}
+          <div className="flex items-center p-1 bg-slate-100 rounded-xl text-xs font-medium border border-slate-200">
+            <button
+              onClick={() => setRoleFilter('all')}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                roleFilter === 'all'
+                  ? 'bg-white text-slate-900 shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              All ({trackingList.length})
+            </button>
+            <button
+              onClick={() => setRoleFilter('officers')}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                roleFilter === 'officers'
+                  ? 'bg-indigo-600 text-white shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Field Officers ({totalOfficersCount})
+            </button>
+            <button
+              onClick={() => setRoleFilter('technicians')}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                roleFilter === 'technicians'
+                  ? 'bg-emerald-600 text-white shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Technicians ({totalTechniciansCount})
+            </button>
+          </div>
+
           {/* Auto Live Sync Switch */}
           <button
             onClick={() => setAutoRefresh(!autoRefresh)}
@@ -244,13 +285,13 @@ export const LiveTrackingView: React.FC<LiveTrackingViewProps> = ({
         </div>
       </div>
 
-      {/* Main Tabular View: All Details of Field Staff on Duty */}
+      {/* Main Tabular View: All Details of Field Staff & Officers on Duty */}
       <div className="rounded-2xl bg-white border border-slate-200/90 overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-[11px] font-semibold tracking-wider">
               <tr>
-                <th className="py-4 px-6">Field Technician</th>
+                <th className="py-4 px-6">Workforce Staff / Officer</th>
                 <th className="py-4 px-6">Department & Role</th>
                 <th className="py-4 px-6">Shift Telemetry Status</th>
                 <th className="py-4 px-6">GPS Coordinates</th>
@@ -266,9 +307,9 @@ export const LiveTrackingView: React.FC<LiveTrackingViewProps> = ({
                       <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 border border-slate-200">
                         <Radio className="w-6 h-6" />
                       </div>
-                      <div className="text-slate-800 font-semibold">No Active Field Employees on Telemetry</div>
+                      <div className="text-slate-800 font-semibold">No Active Workforce Staff on Telemetry</div>
                       <p className="text-xs text-slate-500 max-w-sm">
-                        Field technicians and employees will appear here automatically when on active duty shifts. Field officers are monitored under the dedicated &ldquo;Field Officers &amp; Referrals&rdquo; portal.
+                        Employees and Field Officers will appear here automatically with live location telemetry as soon as they punch in.
                       </p>
                     </div>
                   </td>
@@ -278,21 +319,35 @@ export const LiveTrackingView: React.FC<LiveTrackingViewProps> = ({
                   const isOnline = emp.status === 'online';
                   const mins = emp.minutes_ago !== null && emp.minutes_ago !== undefined ? Math.round(emp.minutes_ago) : null;
                   const pingText = !isOnline ? 'Off Duty' : mins === null ? 'Just now' : mins === 0 ? 'Just now' : `${mins}m ago`;
+                  const officer = isOfficer(emp);
 
                   return (
                     <tr key={emp.employee_id} className="hover:bg-slate-50/80 transition-colors">
-                      {/* Technician Profile */}
+                      {/* Staff / Officer Profile */}
                       <td className="py-4 px-6">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200/80 font-bold flex items-center justify-center text-sm shadow-sm">
+                          <div className={`w-10 h-10 rounded-xl font-bold flex items-center justify-center text-sm shadow-sm ${
+                            officer
+                              ? 'bg-amber-50 text-amber-700 border border-amber-200/80'
+                              : 'bg-indigo-50 text-indigo-700 border border-indigo-200/80'
+                          }`}>
                             {emp.name.charAt(0)}
                           </div>
                           <div>
                             <div className="font-semibold text-slate-900 flex items-center gap-2">
                               <span>{emp.name}</span>
-                              <span className="text-[10px] font-mono text-indigo-600 font-bold px-1.5 py-0.5 rounded bg-indigo-50 border border-indigo-200">
+                              <span className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded border ${
+                                officer
+                                  ? 'text-amber-700 bg-amber-50 border-amber-200'
+                                  : 'text-indigo-600 bg-indigo-50 border-indigo-200'
+                              }`}>
                                 {emp.employee_code}
                               </span>
+                              {officer && (
+                                <span className="text-[9px] font-bold uppercase tracking-wider text-purple-700 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded-full">
+                                  Field Officer
+                                </span>
+                              )}
                             </div>
                             <div className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                               <Phone className="w-3 h-3 text-slate-400" />
